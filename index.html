@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splitwise Clone</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      background: #f9f9f9;
+      margin: 5px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .balances {
+      margin-top: 20px;
+    }
+    .balances h2 {
+      color: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Splitwise Clone</h1>
+
+    <!-- Add Expense Form -->
+    <form id="expenseForm">
+      <label for="description">Description:</label>
+      <input type="text" id="description" placeholder="Enter expense description" required>
+
+      <label for="amount">Amount:</label>
+      <input type="number" id="amount" placeholder="Enter amount" required>
+
+      <label for="paidBy">Paid By:</label>
+      <select id="paidBy" required>
+        <option value="Sherin">Sherin</option>
+        <option value="Murali">Murali</option>
+        <option value="Haris">Haris</option>
+      </select>
+
+      <label for="splitAmong">Split Among:</label>
+      <select id="splitAmong" multiple required>
+        <option value="Sherin">Sherin</option>
+        <option value="Murali">Murali</option>
+        <option value="Haris">Haris</option>
+      </select>
+
+      <button type="submit">Add Expense</button>
+    </form>
+
+    <!-- Display Expenses -->
+    <h2>Expenses</h2>
+    <ul id="expenseList"></ul>
+
+    <!-- Display Balances -->
+    <div class="balances">
+      <h2>Balances</h2>
+      <ul id="balanceList"></ul>
+    </div>
+  </div>
+
+  <script>
+    // JavaScript to handle expenses and balances
+    const expenseForm = document.getElementById('expenseForm');
+    const expenseList = document.getElementById('expenseList');
+    const balanceList = document.getElementById('balanceList');
+
+    let expenses = [];
+    let balances = { Sherin: 0, Murali: 0, Haris: 0 };
+
+    // Load expenses from local storage (if any)
+    if (localStorage.getItem('expenses')) {
+      expenses = JSON.parse(localStorage.getItem('expenses'));
+      updateBalances();
+      updateUI();
+    }
+
+    // Add expense
+    expenseForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const description = document.getElementById('description').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const paidBy = document.getElementById('paidBy').value;
+      const splitAmong = Array.from(document.getElementById('splitAmong').selectedOptions).map(option => option.value);
+
+      if (description && amount && paidBy && splitAmong.length > 0) {
+        const expense = { description, amount, paidBy, splitAmong };
+        expenses.push(expense);
+
+        // Update balances
+        updateBalances();
+
+        // Save to local storage
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+
+        // Clear the form
+        expenseForm.reset();
+
+        // Update the UI
+        updateUI();
+      }
+    });
+
+    // Update balances
+    function updateBalances() {
+      balances = { Sherin: 0, Murali: 0, Haris: 0 }; // Reset balances
+
+      expenses.forEach(expense => {
+        const amountPerPerson = expense.amount / expense.splitAmong.length;
+        expense.splitAmong.forEach(person => {
+          if (person !== expense.paidBy) {
+            balances[person] += amountPerPerson; // Owe money
+            balances[expense.paidBy] -= amountPerPerson; // Paid money
+          }
+        });
+      });
+    }
+
+    // Update UI
+    function updateUI() {
+      // Clear lists
+      expenseList.innerHTML = '';
+      balanceList.innerHTML = '';
+
+      // Display expenses
+      expenses.forEach(expense => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${expense.description}</strong><br>
+          Amount: $${expense.amount.toFixed(2)}<br>
+          Paid by: ${expense.paidBy}<br>
+          Split among: ${expense.splitAmong.join(', ')}
+        `;
+        expenseList.appendChild(li);
+      });
+
+      // Display balances
+      for (const [person, balance] of Object.entries(balances)) {
+        const li = document.createElement('li');
+        li.innerHTML = `${person}: $${balance.toFixed(2)}`;
+        balanceList.appendChild(li);
+      }
+    }
+  </script>
+</body>
+</html>
