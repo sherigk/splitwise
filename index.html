@@ -5,66 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Splitwise Clone</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f4f4f9;
-      color: #333;
-    }
-    h1 {
-      color: #4CAF50;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
-    input[type="text"], input[type="number"], select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 16px;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-    li {
-      background: #f9f9f9;
-      margin: 5px 0;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    .balances {
-      margin-top: 20px;
-    }
-    .balances h2 {
-      color: #4CAF50;
-    }
+    /* Add your CSS styles here */
   </style>
+  <!-- Add Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js"></script>
 </head>
 <body>
   <div class="container">
@@ -107,7 +52,21 @@
   </div>
 
   <script>
-    // JavaScript to handle expenses and balances
+    // Firebase configuration (replace with your Firebase project config)
+const firebaseConfig = {
+  apiKey: "AIzaSyANSk9aGLjQfDlaaKnT4DFdh8newfd1A5A",
+  authDomain: "splitwise-app-145a0.firebaseapp.com",
+  projectId: "splitwise-app-145a0",
+  storageBucket: "splitwise-app-145a0.firebasestorage.app",
+  messagingSenderId: "523406042809",
+  appId: "1:523406042809:web:2bd559411c94bc76c6dd68",
+  measurementId: "G-K5G69NKZEE"
+};
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const expenseForm = document.getElementById('expenseForm');
     const expenseList = document.getElementById('expenseList');
     const balanceList = document.getElementById('balanceList');
@@ -115,15 +74,20 @@
     let expenses = [];
     let balances = { Sherin: 0, Murali: 0, Haris: 0 };
 
-    // Load expenses from local storage (if any)
-    if (localStorage.getItem('expenses')) {
-      expenses = JSON.parse(localStorage.getItem('expenses'));
-      updateBalances();
-      updateUI();
+    // Fetch expenses from Firestore when the page loads
+    async function fetchExpenses() {
+      try {
+        const snapshot = await db.collection('expenses').get();
+        expenses = snapshot.docs.map(doc => doc.data());
+        updateBalances();
+        updateUI();
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+      }
     }
 
     // Add expense
-    expenseForm.addEventListener('submit', function (e) {
+    expenseForm.addEventListener('submit', async function (e) {
       e.preventDefault();
 
       const description = document.getElementById('description').value;
@@ -133,19 +97,15 @@
 
       if (description && amount && paidBy && splitAmong.length > 0) {
         const expense = { description, amount, paidBy, splitAmong };
-        expenses.push(expense);
 
-        // Update balances
-        updateBalances();
-
-        // Save to local storage
-        localStorage.setItem('expenses', JSON.stringify(expenses));
-
-        // Clear the form
-        expenseForm.reset();
-
-        // Update the UI
-        updateUI();
+        // Save expense to Firestore
+        try {
+          await db.collection('expenses').add(expense);
+          await fetchExpenses(); // Fetch updated expenses
+          expenseForm.reset();
+        } catch (error) {
+          console.error('Error adding expense:', error);
+        }
       }
     });
 
@@ -189,6 +149,9 @@
         balanceList.appendChild(li);
       }
     }
+
+    // Load expenses when the page loads
+    fetchExpenses();
   </script>
 </body>
 </html>
